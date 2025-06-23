@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dx serve)",
+      "Bash(cargo:*)",
+      "Bash(dx serve:*)",
+      "Bash(npx @tailwindcss/cli:*)"
+    ],
+    "deny": []
+  }
+}
