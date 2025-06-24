@@ -2,7 +2,7 @@
 // Dioxus学習プロジェクト: 三目並べゲーム
 // ============================================================================
 // このファイルはDioxusフレームワークを学ぶための三目並べゲームのメインファイルです。
-// 
+//
 // 学習ポイント:
 // - Dioxusコンポーネントの基本構造
 // - use_signalによるリアクティブ状態管理
@@ -31,7 +31,7 @@ const O_ICON: Asset = asset!("/assets/o-icon.svg");
 // 型定義: プレイヤー
 // ============================================================================
 // Rustの列挙型（enum）を活用した型安全なプレイヤー表現
-// 学習ポイント: 
+// 学習ポイント:
 // - Clone, Copy: 値の複製を効率的に行う
 // - PartialEq: 等価比較を可能にする
 // - Debug: デバッグ出力を可能にする
@@ -62,14 +62,7 @@ impl Player {
         }
     }
 
-    /// プレイヤーのテーマカラーを返す
-    /// 学習ポイント: UI/UXデザインパターン、カラーパレット管理
-    pub fn color(&self) -> &'static str {
-        match self {
-            Player::X => "#ef4444", // TailwindCSS red-500 相当
-            Player::O => "#3b82f6", // TailwindCSS blue-500 相当
-        }
-    }
+
 
     /// 次のプレイヤーを返す
     /// 学習ポイント: 状態遷移の実装、ゲームロジック
@@ -114,7 +107,7 @@ fn main() {
 // ルートコンポーネント: App
 // ============================================================================
 // アプリケーション全体のルートコンポーネント
-// 学習ポイント: 
+// 学習ポイント:
 // - #[component]属性によるDioxusコンポーネントの定義
 // - document::Linkによるメタデータ設定
 // - rsx!マクロによる宣言的UI記述
@@ -124,17 +117,16 @@ fn App() -> Element {
         // HTMLのheadセクションにファビコンを設定
         // 学習ポイント: ドキュメントレベルの設定とアセット参照
         document::Link { rel: "icon", href: FAVICON }
-        
+
         // TailwindCSSスタイルシートを読み込み
         // 学習ポイント: 外部CSSの組み込み方法
         document::Link { rel: "stylesheet", href: TAILWIND_CSS }
-        
+
         // メインコンテナ
-        // 学習ポイント: TailwindCSSクラス + インラインスタイルのハイブリッド手法
-        div { 
-            class: "w-screen h-screen flex items-center justify-center p-1",
-            style: "background: linear-gradient(135deg, #1e40af, #3730a3);",
-            
+        // 学習ポイント: TailwindCSSのみによる完全なスタイリング
+        div {
+            class: "w-screen h-screen flex items-center justify-center p-1 bg-gradient-to-br from-blue-700 to-indigo-800",
+
             // メインゲームコンポーネントを配置
             TicTacToe {}
         }
@@ -154,15 +146,15 @@ fn TicTacToe() -> Element {
     // ============================================================================
     // 状態管理: Dioxusシグナルによるリアクティブ状態
     // ============================================================================
-    
+
     // ゲーム盤面の状態（3x3の2次元配列）
     // 学習ポイント: use_signalによる状態の初期化、自動再レンダリング
     let mut board = use_signal(|| [[None; 3]; 3]);
-    
+
     // 現在のプレイヤー（Xから開始）
     // 学習ポイント: enumを使った型安全な状態管理
     let mut current_player = use_signal(|| Player::X);
-    
+
     // ゲームの現在状態（初期状態は「プレイ中」）
     // 学習ポイント: 複合的な状態を表現するenum
     let mut game_state = use_signal(|| GameState::Playing);
@@ -268,31 +260,29 @@ fn TicTacToe() -> Element {
     // - TailwindCSSクラスとインラインスタイルの使い分け
     rsx! {
         // ゲームコンテナ（カードスタイル）
-        div { 
-            class: "w-full max-w-sm mx-auto rounded-lg shadow-2xl p-3",
-            style: "background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);",
-            
+        div {
+            class: "w-full max-w-sm mx-auto rounded-lg shadow-2xl p-3 bg-white/95 backdrop-blur-sm",
+
             // ゲームタイトル
-            // 学習ポイント: テキストグラデーション効果の実装
-            h1 { 
-                class: "text-xl font-bold text-center mb-3",
-                style: "background: linear-gradient(to right, #1e40af, #3730a3); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;",
-                "三目並べ" 
+            // 学習ポイント: TailwindCSSのグラデーションテキスト
+            h1 {
+                class: "text-xl font-bold text-center mb-3 bg-gradient-to-r from-blue-700 to-indigo-800 bg-clip-text text-transparent",
+                "三目並べ"
             }
-            
+
             // ゲーム状態表示コンポーネント
             // 学習ポイント: プロパティによるデータの受け渡し
-            GameStatus { 
-                current_player: current_player(), 
-                game_state: game_state() 
+            GameStatus {
+                current_player: current_player(),
+                game_state: game_state()
             }
-            
+
             // ゲーム盤面コンポーネント
             // 学習ポイント: イベントハンドラーの受け渡し
-            GameBoard { 
-                board: board(), 
-                game_state: game_state(), 
-                onclick: handle_cell_click 
+            GameBoard {
+                board: board(),
+                game_state: game_state(),
+                onclick: handle_cell_click
             }
 
             // リセットボタンコンポーネント
@@ -301,4 +291,3 @@ fn TicTacToe() -> Element {
         }
     }
 }
-

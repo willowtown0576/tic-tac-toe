@@ -2,13 +2,13 @@
 // Dioxus学習プロジェクト: UIコンポーネント定義
 // ============================================================================
 // このファイルは三目並べゲームのUIコンポーネントを定義しています。
-// 
+//
 // 学習ポイント:
 // - Dioxusコンポーネントの作成パターン
 // - プロパティ（Props）の定義と活用
 // - イベントハンドリング（EventHandler）
 // - 条件付きレンダリング（match式の活用）
-// - CSSとの統合（TailwindCSS + インラインスタイル）
+// - TailwindCSSによる完全なスタイリング（一本化）
 // - レスポンシブデザインの実装
 
 use dioxus::prelude::*;
@@ -18,7 +18,7 @@ use crate::{Player, GameState};
 // GameCell コンポーネント: 個別ゲームセル
 // ============================================================================
 // 三目並べの個別セル（マス目）を表現するコンポーネント
-// 
+//
 // 学習ポイント:
 // - Dioxusコンポーネントの基本構造
 // - 複数のプロパティ受け取り
@@ -29,7 +29,7 @@ use crate::{Player, GameState};
 pub fn GameCell(
     // セルの行位置（0-2）
     row: usize,
-    // セルの列位置（0-2）  
+    // セルの列位置（0-2）
     col: usize,
     // セルの値（None=空、Some(Player)=プレイヤーの駒）
     cell_value: Option<Player>,
@@ -41,30 +41,27 @@ pub fn GameCell(
     // セルが無効（クリック不可）かどうかを判定
     // 学習ポイント: 論理演算による状態の組み合わせ
     let is_disabled = game_state != GameState::Playing || cell_value.is_some();
-    
+
     rsx! {
         // セルのボタン要素
         // 学習ポイント: 動的なクラス名生成とformat!マクロの活用
         button {
-            class: format!("aspect-square w-full border-2 rounded-lg flex items-center justify-center game-button {}",
-                if is_disabled { "cursor-not-allowed" } else { "cursor-pointer" }
+            class: format!(
+                "aspect-square w-full min-w-16 min-h-16 border-2 rounded-lg flex items-center justify-center transition-all duration-200 {}",
+                if is_disabled {
+                    "cursor-not-allowed bg-gradient-to-br from-slate-50 to-slate-100 border-slate-300 shadow-inner"
+                } else {
+                    "cursor-pointer bg-gradient-to-br from-white to-slate-50 border-slate-400 shadow-md hover:-translate-y-1 hover:shadow-lg active:translate-y-0"
+                }
             ),
-            
-            // 条件付きスタイル適用
-            // 学習ポイント: 三項演算子的な条件分岐、視覚的フィードバック
-            style: if is_disabled {
-                "background: linear-gradient(135deg, #f8fafc, #f1f5f9); border-color: #e2e8f0; min-height: 3rem; box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);"
-            } else {
-                "background: linear-gradient(135deg, #ffffff, #f8fafc); border-color: #cbd5e1; min-height: 3rem; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);"
-            },
-            
+
             // クリックイベントハンドリング
             // 学習ポイント: ガード条件付きイベント処理、closure moveパターン
             onclick: move |_| if !is_disabled { onclick.call((row, col)) },
-            
+
             // HTML属性の設定
             disabled: is_disabled,
-            
+
             // セル内容の条件付きレンダリング
             // 学習ポイント: match式によるOption<T>の処理、動的コンテンツ
             match cell_value {
@@ -72,15 +69,14 @@ pub fn GameCell(
                 Some(player) => rsx! {
                     img {
                         src: player.icon(),                           // Player enumのicon()メソッド呼び出し
-                        class: "object-contain",                      // 画像フィット調整
-                        style: "width: 2rem; height: 2rem;",         // 固定サイズ
+                        class: "object-contain w-12 h-12",           // 画像フィット調整とサイズ指定（大きめに）
                         alt: format!("Player {}", player.symbol())   // アクセシビリティ対応
                     }
                 },
                 // 空のセルの場合：透明なスペーサー
                 None => rsx! {
-                    div { 
-                        style: "width: 2rem; height: 2rem;"         // レイアウト安定化のためのスペーサー
+                    div {
+                        class: "w-12 h-12"                          // レイアウト安定化のためのスペーサー
                     }
                 }
             }
@@ -111,14 +107,11 @@ pub fn GameBoard(
     rsx! {
         // ゲーム盤面のコンテナ
         // 学習ポイント: CSS Grid + TailwindCSSによるレスポンシブレイアウト
-        div { 
-            class: "grid grid-cols-3 gap-2 mb-4 mx-auto aspect-square p-3 rounded-xl shadow-lg border-2",
-            // インラインスタイル: グラデーション背景とレスポンシブサイズ
-            // 学習ポイント: min()関数によるレスポンシブサイズ制御
-            style: "background: linear-gradient(135deg, #f1f5f9, #e2e8f0); border-color: #cbd5e1; width: min(70vw, 16rem); max-width: 16rem;",
-            
+        div {
+            class: "grid grid-cols-3 gap-2 mb-4 mx-auto aspect-square p-3 rounded-xl shadow-lg border-2 bg-gradient-to-br from-slate-100 to-slate-200 border-slate-400 w-80 max-w-[min(80vw,80vh)]",
+
             // ネストしたループによる9個のセル生成
-            // 学習ポイント: 
+            // 学習ポイント:
             // - Rustのrange記法（0..3）
             // - 2次元配列のインデックスアクセス
             // - コンポーネントの動的生成
@@ -151,19 +144,18 @@ pub fn GameBoard(
 #[component]
 pub fn GameStatus(
     // 現在のプレイヤー（ターン表示に使用）
-    current_player: Player, 
+    current_player: Player,
     // ゲーム状態（表示内容の分岐に使用）
     game_state: GameState
 ) -> Element {
     rsx! {
         // ステータス表示のコンテナ
         // 学習ポイント: カード風スタイリング、中央揃えレイアウト
-        div { 
-            class: "mb-3 p-2 rounded-lg flex items-center justify-center gap-2 border",
-            style: "background: linear-gradient(135deg, #dbeafe, #e0e7ff); border-color: #c7d2fe;",
-            
+        div {
+            class: "mb-3 p-2 rounded-lg flex items-center justify-center gap-2 border bg-gradient-to-br from-blue-50 to-indigo-50 border-indigo-200",
+
             // ゲーム状態に応じた表示内容の分岐
-            // 学習ポイント: 
+            // 学習ポイント:
             // - match式による包括的なパターンマッチング
             // - 各状態に特化したUI表現
             // - コンテクストに応じたアニメーション効果
@@ -172,39 +164,42 @@ pub fn GameStatus(
                 GameState::Playing => rsx! {
                     img {
                         src: current_player.icon(),              // 現在プレイヤーのアイコン
-                        class: "object-contain",                 // 画像フィット調整
-                        style: "width: 1.5rem; height: 1.5rem;", // 小さめサイズ
+                        class: "object-contain w-8 h-8",        // 画像フィット調整
                         alt: format!("Player {}", current_player.symbol())
                     }
                     span {
-                        class: "text-lg font-semibold",          // フォントスタイル
-                        // 動的カラーリング：プレイヤーのテーマカラーを適用
-                        style: format!("color: {};", current_player.color()),
+                        class: format!("text-lg font-semibold {}",
+                            match current_player {
+                                Player::X => "text-red-500",
+                                Player::O => "text-blue-500",
+                            }
+                        ),
                         "現在のプレイヤー"
                     }
                 },
-                
+
                 // 勝利状態：勝者を祝福表示
                 GameState::Won(player) => rsx! {
                     img {
                         src: player.icon(),                      // 勝者のアイコン
-                        class: "object-contain animate-bounce",  // バウンスアニメーション
-                        style: "width: 2rem; height: 2rem;",    // 大きめサイズ（祝福効果）
+                        class: "object-contain animate-bounce w-10 h-10", // バウンスアニメーションと大きめサイズ
                         alt: format!("Winner {}", player.symbol())
                     }
                     span {
-                        class: "text-xl font-bold",              // 強調フォント
-                        // 勝者のテーマカラーで表示
-                        style: format!("color: {};", player.color()),
+                        class: format!("text-xl font-bold {}",   // 強調フォントと勝者テーマカラー
+                            match player {
+                                Player::X => "text-red-500",
+                                Player::O => "text-blue-500",
+                            }
+                        ),
                         "勝利！"
                     }
                 },
-                
+
                 // 引き分け状態：中立的な表示
                 GameState::Draw => rsx! {
                     span {
-                        class: "text-xl font-bold",              // 強調フォント
-                        style: "color: #6b7280;",               // グレー色（中立）
+                        class: "text-xl font-bold text-gray-500", // 強調フォントとグレー色（中立）
                         "🤝 引き分け!"                         // 絵文字で親しみやすく
                     }
                 }
@@ -231,21 +226,19 @@ pub fn ResetButton(
 ) -> Element {
     rsx! {
         // リセットボタン
-        // 学習ポイント: 
+        // 学習ポイント:
         // - フルワイズレイアウト（w-full）
         // - カスタムCSSクラス（reset-button）との連携
         // - TailwindCSSとインラインスタイルのハイブリッド
         button {
-            class: "w-full text-white font-bold py-2 px-4 rounded-lg reset-button mt-4 flex items-center justify-center gap-2",
-            // インラインスタイル：グラデーション背景と影効果
-            style: "background: linear-gradient(135deg, #1e40af, #3730a3); font-size: 1rem; box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3); border: none;",
-            
+            class: "w-full text-white font-bold py-2 px-4 rounded-lg mt-4 flex items-center justify-center gap-2 text-base bg-gradient-to-br from-blue-700 to-indigo-800 shadow-blue-500/30 shadow-lg transition-all duration-200 hover:from-blue-800 hover:to-indigo-900 hover:shadow-blue-500/50 hover:shadow-xl border-none",
+
             // クリックイベントハンドリング
             // 学習ポイント: move closureによるイベント処理、引数の無視（_）
             onclick: move |_| onclick.call(()),
-            
+
             // ボタン内容：アイコン + テキスト
-            // 学習ポイント: 
+            // 学習ポイント:
             // - 絵文字アイコンの活用
             // - flexレイアウトによる要素配置
             // - セマンティックな構造（span要素の使い分け）
