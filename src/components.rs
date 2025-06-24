@@ -12,7 +12,7 @@
 // - レスポンシブデザインの実装
 
 use dioxus::prelude::*;
-use crate::{Player, GameState};
+use crate::types::{Player, GameState};
 
 // ============================================================================
 // GameCell コンポーネント: 個別ゲームセル
@@ -179,10 +179,19 @@ pub fn GameStatus(
                 },
 
                 // 勝利状態：勝者を祝福表示
+                // 学習ポイント: 他のanimate-クラスも試せます
+                // - animate-bounce: 上下バウンス（現在使用中）
+                // - animate-pulse: フェードイン・アウト
+                // - animate-ping: 拡大パルス効果
+                // - animate-spin: 回転アニメーション
                 GameState::Won(player) => rsx! {
                     img {
                         src: player.icon(),                      // 勝者のアイコン
-                        class: "object-contain animate-bounce w-10 h-10", // バウンスアニメーションと大きめサイズ
+                        class: "object-contain animate-bounce w-8 h-8",
+                        // 他のアニメーション例:
+                        // class: "object-contain animate-pulse w-8 h-8",
+                        // class: "object-contain animate-ping w-8 h-8",
+                        // class: "object-contain animate-spin w-8 h-8",
                         alt: format!("Winner {}", player.symbol())
                     }
                     span {

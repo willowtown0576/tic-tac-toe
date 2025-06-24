@@ -12,9 +12,12 @@
 
 use dioxus::prelude::*;
 
-// コンポーネントモジュールをインポート
+// モジュール定義とインポート
 // 学習ポイント: モジュラー設計により再利用性と保守性を向上
+mod types;
 mod components;
+
+use types::{Player, GameState, GameLogic};
 use components::{GameBoard, GameStatus, ResetButton};
 
 // ============================================================================
@@ -24,75 +27,8 @@ use components::{GameBoard, GameStatus, ResetButton};
 // これによりランタイムエラーを防ぎ、型安全性を確保
 const FAVICON: Asset = asset!("/assets/favicon.ico");
 const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
-const X_ICON: Asset = asset!("/assets/x-icon.svg");
-const O_ICON: Asset = asset!("/assets/o-icon.svg");
-
-// ============================================================================
-// 型定義: プレイヤー
-// ============================================================================
-// Rustの列挙型（enum）を活用した型安全なプレイヤー表現
-// 学習ポイント:
-// - Clone, Copy: 値の複製を効率的に行う
-// - PartialEq: 等価比較を可能にする
-// - Debug: デバッグ出力を可能にする
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub enum Player {
-    X,  // プレイヤーX
-    O,  // プレイヤーO
-}
-
-// Player enumのメソッド実装
-// 学習ポイント: Rustのimpl文による型への機能追加
-impl Player {
-    /// プレイヤーの文字列表現を返す
-    /// 学習ポイント: match式によるパターンマッチング
-    pub fn symbol(&self) -> &'static str {
-        match self {
-            Player::X => "X",
-            Player::O => "O",
-        }
-    }
-
-    /// プレイヤーのアイコンアセットを返す
-    /// 学習ポイント: Asset型との統合、コンパイル時アセット検証
-    pub fn icon(&self) -> Asset {
-        match self {
-            Player::X => X_ICON,
-            Player::O => O_ICON,
-        }
-    }
 
 
-
-    /// 次のプレイヤーを返す
-    /// 学習ポイント: 状態遷移の実装、ゲームロジック
-    pub fn next(&self) -> Player {
-        match self {
-            Player::X => Player::O,
-            Player::O => Player::X,
-        }
-    }
-}
-
-// ============================================================================
-// 型定義: ゲーム状態
-// ============================================================================
-// ゲームの現在状態を表現する列挙型
-// 学習ポイント: データを持つバリアント（Won(Player)）による表現力の向上
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub enum GameState {
-    Playing,      // ゲーム中
-    Won(Player),  // 勝利（どのプレイヤーが勝ったかを保持）
-    Draw,         // 引き分け
-}
-
-// ============================================================================
-// 型エイリアス: ゲーム盤面
-// ============================================================================
-// 3x3の2次元配列による盤面表現
-// Option<Player>により空のセル（None）とプレイヤーが置かれたセル（Some(Player)）を区別
-// 学習ポイント: Option型による安全なnull表現、多次元配列の活用
-type Board = [[Option<Player>; 3]; 3];
 
 // ============================================================================
 // メイン関数: アプリケーションエントリーポイント
@@ -149,7 +85,7 @@ fn TicTacToe() -> Element {
 
     // ゲーム盤面の状態（3x3の2次元配列）
     // 学習ポイント: use_signalによる状態の初期化、自動再レンダリング
-    let mut board = use_signal(|| [[None; 3]; 3]);
+    let mut board = use_signal(|| GameLogic::empty_board());
 
     // 現在のプレイヤー（Xから開始）
     // 学習ポイント: enumを使った型安全な状態管理
@@ -158,56 +94,6 @@ fn TicTacToe() -> Element {
     // ゲームの現在状態（初期状態は「プレイ中」）
     // 学習ポイント: 複合的な状態を表現するenum
     let mut game_state = use_signal(|| GameState::Playing);
-
-    // ============================================================================
-    // ゲームロジック: 勝敗判定関数
-    // ============================================================================
-    // 純粋関数として実装された勝敗判定ロジック
-    // 学習ポイント:
-    // - 関数型プログラミングの原則（副作用なし）
-    // - パターンマッチングの活用
-    // - イテレータチェーンによる効率的な処理
-    let check_winner = move |board: Board| -> GameState {
-        // 横列をチェック（行ごとの勝敗判定）
-        for i in 0..3 {
-            if let (Some(a), Some(b), Some(c)) = (board[i][0], board[i][1], board[i][2]) {
-                if a == b && b == c {
-                    return GameState::Won(a);
-                }
-            }
-        }
-
-        // 縦列をチェック（列ごとの勝敗判定）
-        for j in 0..3 {
-            if let (Some(a), Some(b), Some(c)) = (board[0][j], board[1][j], board[2][j]) {
-                if a == b && b == c {
-                    return GameState::Won(a);
-                }
-            }
-        }
-
-        // 左上から右下への対角線をチェック
-        if let (Some(a), Some(b), Some(c)) = (board[0][0], board[1][1], board[2][2]) {
-            if a == b && b == c {
-                return GameState::Won(a);
-            }
-        }
-
-        // 右上から左下への対角線をチェック
-        if let (Some(a), Some(b), Some(c)) = (board[0][2], board[1][1], board[2][0]) {
-            if a == b && b == c {
-                return GameState::Won(a);
-            }
-        }
-
-        // 引き分け判定：全セルが埋まっているかチェック
-        // 学習ポイント: イテレータチェーンとall()の活用
-        if board.iter().flatten().all(|cell| cell.is_some()) {
-            GameState::Draw
-        } else {
-            GameState::Playing
-        }
-    };
 
     // ============================================================================
     // イベントハンドラー: セルクリック処理
@@ -230,7 +116,7 @@ fn TicTacToe() -> Element {
         });
 
         // 勝敗判定を実行
-        let new_game_state = check_winner(board());
+        let new_game_state = GameLogic::check_game_state(board());
         game_state.set(new_game_state);
 
         // ゲームが継続中なら次のプレイヤーに交代
@@ -246,7 +132,7 @@ fn TicTacToe() -> Element {
     // ゲームを初期状態にリセットする処理
     // 学習ポイント: 複数の状態を一括でリセットするパターン
     let reset_game = move |_| {
-        board.set([[None; 3]; 3]);              // 盤面をクリア
+        board.set(GameLogic::empty_board());    // 盤面をクリア
         current_player.set(Player::X);          // プレイヤーをXにリセット
         game_state.set(GameState::Playing);     // ゲーム状態をプレイ中に
     };
